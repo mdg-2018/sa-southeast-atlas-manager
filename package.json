@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "atlasmanager": "github:mdg-2018/libAtlasManager",
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "mongodb": "^3.3.0-beta2"
   }
 }

@@ -1,7 +1,9 @@
 const AtlasApiClient = require('atlasmanager').AtlasApiClient;
 const AtlasRequest = require('atlasmanager').AtlasRequest;
 const parseArgs = require('minimist');
+const MongoClient = require('mongodb').MongoClient;
 const key = require('./key.json');
+const config = require("./config.json");
 
 var args = parseArgs(process.argv.slice(2));
 var action;
@@ -25,16 +27,31 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
 
 function togglePause(project) {
     var client = new AtlasApiClient(project.id, key.key, key.username);
-    client.clusterinfo(null, function (clusters) {
+    client.clusterinfo(null, function (err, clusters) {
+        if (err) {
+            log("error", err);
+        }
         clusters.results.forEach((cluster) => {
             if (cluster.providerSettings.instanceSizeName != "M0") {
                 if (action == "pause") {
                     if (cluster.name.indexOf('nopause') == -1) {
-                        client.pausecluster(cluster.name);
+                        client.pausecluster(cluster.name, function (err, result) {
+                            if (err) {
+                                log("error", err)
+                            }
+
+                            log("response", result)
+                        });
                     }
                 } else if (action == "resume") {
                     if (cluster.name.indexOf('nopause') == -1) {
-                        client.resumecluster(cluster.name);
+                        client.resumecluster(cluster.name, function (err, result) {
+                            if (err) {
+                                log("error", err)
+                            }
+
+                            log("response", result)
+                        });
                     }
                 } else {
                     throw "invalid action"
@@ -43,4 +60,34 @@ function togglePause(project) {
             }
         })
     })
+
+    function log(type, message) {
+        var response = {
+            "type": type,
+            "message": message
+        }
+
+        if (config.logLocation == "mongodb") {
+            try {
+                var mongoClient = new MongoClient(config.mongoURI);
+                mongoClient.connect(function (err) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    mongoClient.db('applogs').collection('saSoutheastAtlasManager').insertOne(response, function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        }
+                        mongoClient.close();
+                    });
+                })
+            } catch(err) {
+                console.log(err);
+            }
+            
+        } else {
+            console.log(JSON.stringify(response));
+        }
+
+    }
 }
