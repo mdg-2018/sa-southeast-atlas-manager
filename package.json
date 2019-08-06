@@ -1,0 +1,14 @@
+{
+  "name": "sa-southeast-atlas-manager",
+  "version": "1.0.0",
+  "description": "App to pause all Atlas clusters in the sa-southeast organization so we don't spend all of MongoDB's $$$ on unused infrastructure",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matt Grogan",
+  "license": "ISC",
+  "dependencies": {
+    "atlasmanager": "github:mdg-2018/libAtlasManager"
+  }
+}
