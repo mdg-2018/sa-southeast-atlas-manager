@@ -9,6 +9,7 @@
   "author": "Matt Grogan",
   "license": "ISC",
   "dependencies": {
-    "atlasmanager": "github:mdg-2018/libAtlasManager"
+    "atlasmanager": "github:mdg-2018/libAtlasManager",
+    "minimist": "^1.2.0"
   }
 }
