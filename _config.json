@@ -1,5 +1,7 @@
 {
     "logLocation":"",
     "mongoURI":"",
+    "logDB":"",
+    "logCollection":"",
     "stitchWebhook":""
 }

@@ -84,7 +84,7 @@ function togglePause(project,nopause) {
                     if (err) {
                         console.log(err);
                     }
-                    mongoClient.db('applogs').collection('saSoutheastAtlasManager').insertOne(response, function (err, result) {
+                    mongoClient.db(config.logDB).collection(config.logCollection).insertOne(response, function (err, result) {
                         if (err) {
                             console.log(err);
                         }
