@@ -1,4 +1,0 @@
-{
-    "logLocation":"mongodb",
-    "mongoURI":"mongodb://localhost"
-}

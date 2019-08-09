@@ -1,6 +1,7 @@
 const AtlasApiClient = require('atlasmanager').AtlasApiClient;
 const AtlasRequest = require('atlasmanager').AtlasRequest;
 const parseArgs = require('minimist');
+const request = require('request');
 const MongoClient = require('mongodb').MongoClient;
 const key = require('./key.json');
 const config = require("./config.json");
@@ -17,15 +18,22 @@ if (args._[0] == "pause" || args._[0] == "resume") {
 var orgClient = new AtlasApiClient('', key.key, key.username);
 AtlasRequest.doGet('', orgClient.auth, function (err, response) {
     var projects = JSON.parse(response.body);
-    projects.results.forEach((project) => {
-        if (project.name.indexOf("MG") > -1) {
-            togglePause(project);
-        }
 
+    //Don't pause clusters people don't want paused
+    var stitchUrl = config.stitchWebhook + key.stitchSecret;
+    request.get(stitchUrl,function(error,response,body){
+        var nopause = JSON.parse(body);
+
+        projects.results.forEach((project) => {
+            togglePause(project,nopause);
+    
+        })
     })
+
+    
 });
 
-function togglePause(project) {
+function togglePause(project,nopause) {
     var client = new AtlasApiClient(project.id, key.key, key.username);
     client.clusterinfo(null, function (err, clusters) {
         if (err) {
@@ -34,7 +42,7 @@ function togglePause(project) {
         clusters.results.forEach((cluster) => {
             if (cluster.providerSettings.instanceSizeName != "M0") {
                 if (action == "pause") {
-                    if (cluster.name.indexOf('nopause') == -1) {
+                    if (canPause(project,cluster.name,nopause)) {
                         client.pausecluster(cluster.name, function (err, result) {
                             if (err) {
                                 log("error", err)
@@ -44,7 +52,7 @@ function togglePause(project) {
                         });
                     }
                 } else if (action == "resume") {
-                    if (cluster.name.indexOf('nopause') == -1) {
+                    if (canPause(project,cluster.name,nopause)) {
                         client.resumecluster(cluster.name, function (err, result) {
                             if (err) {
                                 log("error", err)
@@ -62,8 +70,10 @@ function togglePause(project) {
     })
 
     function log(type, message) {
+        var date = new Date();
         var response = {
             "type": type,
+            "time": new Date(),
             "message": message
         }
 
@@ -89,5 +99,21 @@ function togglePause(project) {
             console.log(JSON.stringify(response));
         }
 
+    }
+
+    function canPause(project,cluster,nopause){
+        var canPause = true;
+        if(cluster.indexOf('nopause') > -1){
+            canPause = false;
+        }
+
+        nopause.forEach((item) => {
+            if(item.projectName == project.name && item.clusterName == cluster){
+                canPause = false;
+                
+            }
+        })
+
+        return canPause;
     }
 }
