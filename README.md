@@ -4,7 +4,10 @@ This is a simple CLI tool to pause & resume every cluster in an Atlas organizati
 
 To use this app, you must have an organization owner Atlas API key.
 
-Usage:
+Setup:<br>
+Move _config.json and _key.json to config.json and key.json, then fill out required values in both files.
+
+Usage:<br>
 <code>node index.js pause</code>
 <br><br>
 <code>node index.js resume</code>
