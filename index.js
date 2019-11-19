@@ -21,19 +21,20 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
 
     //Don't pause clusters people don't want paused
     var stitchUrl = config.stitchWebhook + key.stitchSecret;
-    request.get(stitchUrl,function(error,response,body){
+    request.get(stitchUrl, function (error, response, body) {
         var nopause = JSON.parse(body);
+        log("checking whitelist",nopause);
 
         projects.results.forEach((project) => {
-            togglePause(project,nopause);
-    
+            togglePause(project, nopause);
+
         })
     })
 
-    
+
 });
 
-function togglePause(project,nopause) {
+function togglePause(project, nopause) {
     var client = new AtlasApiClient(project.id, key.key, key.username);
     client.clusterinfo(null, function (err, clusters) {
         if (err) {
@@ -42,7 +43,7 @@ function togglePause(project,nopause) {
         clusters.results.forEach((cluster) => {
             if (cluster.providerSettings.instanceSizeName != "M0") {
                 if (action == "pause") {
-                    if (canPause(project,cluster.name,nopause)) {
+                    if (canPause(project, cluster.name, nopause)) {
                         client.pausecluster(cluster.name, function (err, result) {
                             if (err) {
                                 log("error", err)
@@ -52,7 +53,7 @@ function togglePause(project,nopause) {
                         });
                     }
                 } else if (action == "resume") {
-                    if (canPause(project,cluster.name,nopause)) {
+                    if (canPause(project, cluster.name, nopause)) {
                         client.resumecluster(cluster.name, function (err, result) {
                             if (err) {
                                 log("error", err)
@@ -68,52 +69,53 @@ function togglePause(project,nopause) {
             }
         })
     })
+}
 
-    function log(type, message) {
-        var date = new Date();
-        var response = {
-            "type": type,
-            "time": new Date(),
-            "message": message
-        }
+function log(type, message) {
+    var date = new Date();
+    var response = {
+        "type": type,
+        "time": new Date(),
+        "message": message
+    }
 
-        if (config.logLocation == "mongodb") {
-            try {
-                var mongoClient = new MongoClient(config.mongoURI);
-                mongoClient.connect(function (err) {
+    if (config.logLocation == "mongodb") {
+        try {
+            var mongoClient = new MongoClient(config.mongoURI);
+            mongoClient.connect(function (err) {
+                if (err) {
+                    console.log(err);
+                }
+                mongoClient.db(config.logDB).collection(config.logCollection).insertOne(response, function (err, result) {
                     if (err) {
                         console.log(err);
                     }
-                    mongoClient.db(config.logDB).collection(config.logCollection).insertOne(response, function (err, result) {
-                        if (err) {
-                            console.log(err);
-                        }
-                        mongoClient.close();
-                    });
-                })
-            } catch(err) {
-                console.log(err);
-            }
-            
-        } else {
-            console.log(JSON.stringify(response));
+                    mongoClient.close();
+                });
+            })
+        } catch (err) {
+            console.log(err);
         }
 
+    } else {
+        console.log(JSON.stringify(response));
     }
 
-    function canPause(project,cluster,nopause){
-        var canPause = true;
-        if(cluster.indexOf('nopause') > -1){
+}
+
+function canPause(project, cluster, nopause) {
+    var canPause = true;
+    if (cluster.indexOf('nopause') > -1) {
+        canPause = false;
+        log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: nopause`);
+    }
+
+    nopause.forEach((item) => {
+        if (item.projectName == project.name && item.clusterName == cluster) {
             canPause = false;
+            log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because it is whitelisted`);
         }
+    })
 
-        nopause.forEach((item) => {
-            if(item.projectName == project.name && item.clusterName == cluster){
-                canPause = false;
-                
-            }
-        })
-
-        return canPause;
-    }
+    return canPause;
 }
