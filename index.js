@@ -33,7 +33,8 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
 
         })
         Promise.all(promises).then(() => {
-            sendSlackNotification(pauseClusterInfo);
+            log("All promises resolved", JSON.stringify(pauseClusterInfo));
+            //sendSlackNotification(pauseClusterInfo);
         })
     })
 
@@ -52,14 +53,15 @@ function togglePause(project, nopause) {
                 var instanceSize = cluster.providerSettings.instanceSizeName; //Get instance size
                 if (instanceSize != "M0" || instanceSize != "M2" || instanceSize != "M5") {
                     if (action == "pause") {
-                        if (canPause(project, cluster.name, nopause)) { 
+                        if (canPause(project, cluster.name, nopause)) {
+                            /* 
                             client.pausecluster(cluster.name, function (err, result) {
                                 if (err) {
                                     log("error", err)
                                 }
 
                                 log("response", result)
-                            });
+                            });*/
 
                             //Add paused cluster to pauseClusterInfo list
                             pauseClusterInfo.push(
