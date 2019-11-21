@@ -5,6 +5,7 @@ const request = require('request');
 const MongoClient = require('mongodb').MongoClient;
 const key = require('./key.json');
 const config = require("./config.json");
+const slackConfig = require("./slack-config.json"); //for sending slack notifications
 
 var args = parseArgs(process.argv.slice(2));
 var action;
@@ -33,8 +34,7 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
 
         })
         Promise.all(promises).then(() => {
-            log("All promises resolved", JSON.stringify(pauseClusterInfo));
-            //sendSlackNotification(pauseClusterInfo);
+            sendSlackNotification(pauseClusterInfo);
         })
     })
 
@@ -54,14 +54,13 @@ function togglePause(project, nopause) {
                 if (instanceSize != "M0" || instanceSize != "M2" || instanceSize != "M5") {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
-                            /* 
                             client.pausecluster(cluster.name, function (err, result) {
                                 if (err) {
                                     log("error", err)
                                 }
 
                                 log("response", result)
-                            });*/
+                            });
 
                             //Add paused cluster to pauseClusterInfo list
                             pauseClusterInfo.push(
@@ -138,4 +137,31 @@ function canPause(project, cluster, nopause) {
     })
 
     return canPause;
+}
+
+function sendSlackNotification(pauseClusterInfo) {
+
+    var slackPayload = slackConfig.payloadTemplate;
+
+    //Add in specific Slack messaging
+    if (pauseClusterInfo.length > 0) {
+        slackPayload.blocks[2].text.text += "Today, I've paused the following clusters:\n";
+        pauseClusterInfo.forEach((cluster) => {
+            slackPayload.blocks[2].text.text += "• Project: " + cluster.projectName + ", " + "Cluster: " + cluster.clusterName + "\n";
+        })
+    }
+    else { //Message if no clusters paused
+        slackPayload.blocks[2].text.text += "There were no clusters paused in today's run."
+    }
+    
+    request({
+        url: slackConfig.webhookURL,
+        method: "POST",
+        json: true,
+        body: slackPayload
+    }, (err, resp, body) => {
+        if (err) {
+            log("error", err);
+        }
+    });
 }
