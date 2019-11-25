@@ -1,0 +1,42 @@
+{
+    "webhookURL": "<Enter Webhook URL here>",
+    "payloadTemplate": {
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Hi SAs of the West :wave:"
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "I'm the Atlas Manager - I'm here to save MDB some $$$.\n I pause clusters in the SA-NA-West organization, nightly at 8 PM PST."
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ""
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Remember that clusters whose *name* starts with *MC-* will not be paused.\n Alternatively, visit <https://stitch-statichosting-prod.s3.amazonaws.com/5dadebe0dc8c27c935ba2ebe/index.html|this page> to add your cluster to the whitelist so that I will not pause it during my nightly run."
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Friendly reminder to resume any clusters shown above that you might need today!"
+                }
+            }
+        ]
+    }
+}

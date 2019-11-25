@@ -51,7 +51,7 @@ function togglePause(project, nopause) {
             }
             clusters.results.forEach((cluster) => {
                 var instanceSize = cluster.providerSettings.instanceSizeName; //Get instance size
-                if (instanceSize != "M0" || instanceSize != "M2" || instanceSize != "M5") {
+                if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused) {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
                             client.pausecluster(cluster.name, function (err, result) {
@@ -59,13 +59,12 @@ function togglePause(project, nopause) {
                                     log("error", err)
                                 }
 
+                                //Add paused cluster to pauseClusterInfo list
+                                pauseClusterInfo.push(
+                                    {"projectName": project.name, "clusterName": cluster.name}
+                                )
                                 log("response", result)
                             });
-
-                            //Add paused cluster to pauseClusterInfo list
-                            pauseClusterInfo.push(
-                                {"projectName": project.name, "clusterName": cluster.name}
-                            )
                         }
                     } else if (action == "resume") {
                         if (canPause(project, cluster.name, nopause)) {
@@ -125,7 +124,7 @@ function canPause(project, cluster, nopause) {
     var canPause = true;
     if (cluster.indexOf('MC-') > -1) { //Checking for MC- in front, instead of 'nopause'
         canPause = false;
-        log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: nopause`);
+        log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: MC-`);
     }
 
     nopause.forEach((item) => {

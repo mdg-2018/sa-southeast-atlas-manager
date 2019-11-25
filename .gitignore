@@ -2,3 +2,4 @@ node_modules
 key.json
 stuff
 config.json
+slack-config.json
