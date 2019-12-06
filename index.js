@@ -29,7 +29,7 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
         log("checking whitelist",nopause);
 
         var promises = [];
-        projects.results.forEach((project) => {
+        projects.results.forEach(async (project) => {
             promises.push(togglePause(project, nopause));
         })
         Promise.all(promises).then(() => {
@@ -45,17 +45,17 @@ function togglePause(project, nopause) {
     return new Promise(
         function(resolve, reject) {
             var client = new AtlasApiClient(project.id, key.key, key.username);
-            client.clusterinfo(null, function (err, clusters) {
+            client.clusterinfo(null, async function (err, clusters) {
             if (err) {
                 log("error", err);
             }
             clusters.results.forEach((cluster) => {
                 var instanceSize = cluster.providerSettings.instanceSizeName; //Get instance size
-                if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused) {
+                if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused && cluster.name === "Pause-Test-1") {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
                             
-                            client.pausecluster(cluster.name, function (err, result) {
+                            client.pausecluster(cluster.name, async function (err, result) {
                                 if (err) {
                                     log("error", err)
                                 }
