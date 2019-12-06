@@ -31,9 +31,9 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
         var promises = [];
         projects.results.forEach((project) => {
             promises.push(togglePause(project, nopause));
-
         })
         Promise.all(promises).then(() => {
+            log("Paused clusters", pauseClusterInfo);
             sendSlackNotification(pauseClusterInfo);
         })
     })
@@ -54,16 +54,18 @@ function togglePause(project, nopause) {
                 if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused) {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
+                            
                             client.pausecluster(cluster.name, function (err, result) {
                                 if (err) {
                                     log("error", err)
                                 }
-
                                 //Add paused cluster to pauseClusterInfo list
-                                pauseClusterInfo.push(
-                                    {"projectName": project.name, "clusterName": cluster.name}
-                                )
-                                log("response", result)
+                                else {
+                                    pauseClusterInfo.push(
+                                        {"projectName": project.name, "clusterName": cluster.name}
+                                    )
+                                    log("response", result)
+                                }
                             });
                         }
                     } else if (action == "resume") {
@@ -153,6 +155,8 @@ function sendSlackNotification(pauseClusterInfo) {
         slackPayload.blocks[2].text.text += "There were no clusters paused in today's run."
     }
     
+    log("Slack Message", slackPayload);
+    /*
     request({
         url: slackConfig.webhookURL,
         method: "POST",
@@ -162,5 +166,5 @@ function sendSlackNotification(pauseClusterInfo) {
         if (err) {
             log("error", err);
         }
-    });
+    });*/
 }
