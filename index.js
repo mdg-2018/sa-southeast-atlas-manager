@@ -29,11 +29,10 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
         log("checking whitelist",nopause);
 
         var promises = [];
-        projects.results.forEach(async (project) => {
+        projects.results.forEach((project) => {
             promises.push(togglePause(project, nopause));
         })
         Promise.all(promises).then(() => {
-            log("Paused clusters", pauseClusterInfo);
             sendSlackNotification(pauseClusterInfo);
         })
     })
@@ -46,44 +45,47 @@ function togglePause(project, nopause) {
         function(resolve, reject) {
             var client = new AtlasApiClient(project.id, key.key, key.username);
             client.clusterinfo(null, async function (err, clusters) {
-            if (err) {
-                log("error", err);
-            }
-            clusters.results.forEach((cluster) => {
-                var instanceSize = cluster.providerSettings.instanceSizeName; //Get instance size
-                if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused && cluster.name === "Pause-Test-1") {
-                    if (action == "pause") {
-                        if (canPause(project, cluster.name, nopause)) {
-                            
-                            client.pausecluster(cluster.name, async function (err, result) {
-                                if (err) {
-                                    log("error", err)
-                                }
-                                //Add paused cluster to pauseClusterInfo list
-                                else {
-                                    pauseClusterInfo.push(
-                                        {"projectName": project.name, "clusterName": cluster.name}
-                                    )
-                                    log("response", result)
-                                }
-                            });
-                        }
-                    } else if (action == "resume") {
-                        if (canPause(project, cluster.name, nopause)) {
-                            client.resumecluster(cluster.name, function (err, result) {
-                                if (err) {
-                                    log("error", err)
-                                }
-
-                                log("response", result)
-                            });
-                        }
-                    } else {
-                        throw "invalid action"
-                    }
-
+                if (err) {
+                    log("error", err);
+                    reject(err);
                 }
-            })
+                clusters.results.forEach(async (cluster) => {
+                    var instanceSize = cluster.providerSettings.instanceSizeName; //Get instance size
+                    if (instanceSize != "M0" && instanceSize != "M2" && instanceSize != "M5" && !cluster.paused) {
+                        if (action == "pause") {
+                            if (await canPause(project, cluster.name, nopause)) {
+                               
+                                client.pausecluster(cluster.name, function (err, result) {
+                                    if (err) {
+                                        log("error", err);
+                                        reject(err);
+                                    }
+                                    //Add paused cluster to pauseClusterInfo list
+                                    else {
+                                        log("response", result)
+                                    }
+                                });
+                                pauseClusterInfo.push(
+                                    {"projectName": project.name, "clusterName": cluster.name}
+                                )
+                            }
+                        } 
+                        else if (action == "resume") {
+                            if (canPause(project, cluster.name, nopause)) {
+                                client.resumecluster(cluster.name, function (err, result) {
+                                    if (err) {
+                                        log("error", err);
+                                        reject(err);
+                                    }
+                                    log("response", result)
+                                });
+                            }
+                        } 
+                        else {
+                            throw "invalid action"
+                        }
+                    }
+                })
             resolve(pauseClusterInfo); //resolve Promise and return pauseClusterInfo list
         })
     }
@@ -122,7 +124,7 @@ function log(type, message) {
 
 }
 
-function canPause(project, cluster, nopause) {
+async function canPause(project, cluster, nopause) {
     var canPause = true;
     if (cluster.indexOf('MC-') > -1) { //Checking for MC- in front, instead of 'nopause'
         canPause = false;
@@ -136,7 +138,6 @@ function canPause(project, cluster, nopause) {
             log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because it is whitelisted`);
         }
     })
-
     return canPause;
 }
 
@@ -155,8 +156,6 @@ function sendSlackNotification(pauseClusterInfo) {
         slackPayload.blocks[2].text.text += "There were no clusters paused in today's run."
     }
     
-    log("Slack Message", slackPayload);
-    /*
     request({
         url: slackConfig.webhookURL,
         method: "POST",
@@ -166,5 +165,5 @@ function sendSlackNotification(pauseClusterInfo) {
         if (err) {
             log("error", err);
         }
-    });*/
+    });
 }
