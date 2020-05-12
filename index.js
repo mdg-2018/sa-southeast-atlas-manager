@@ -23,7 +23,7 @@ AtlasRequest.doGet('', orgClient.auth, function (err, response) {
     var stitchUrl = config.stitchWebhook + key.stitchSecret;
     request.get(stitchUrl, function (error, response, body) {
         var nopause = JSON.parse(body);
-        log("checking whitelist",nopause);
+        log("checking whitelist", nopause);
 
         projects.results.forEach((project) => {
             togglePause(project, nopause);
@@ -40,34 +40,37 @@ function togglePause(project, nopause) {
         if (err) {
             log("error", err);
         }
-        clusters.results.forEach((cluster) => {
-            if (cluster.providerSettings.instanceSizeName != "M0") {
-                if (action == "pause") {
-                    if (canPause(project, cluster.name, nopause)) {
-                        client.pausecluster(cluster.name, function (err, result) {
-                            if (err) {
-                                log("error", err)
-                            }
+        if (clusters) {
+            clusters.results.forEach((cluster) => {
+                if (cluster.providerSettings.instanceSizeName != "M0") {
+                    if (action == "pause") {
+                        if (canPause(project, cluster.name, nopause)) {
+                            client.pausecluster(cluster.name, function (err, result) {
+                                if (err) {
+                                    log("error", err)
+                                }
 
-                            log("response", result)
-                        });
-                    }
-                } else if (action == "resume") {
-                    if (canPause(project, cluster.name, nopause)) {
-                        client.resumecluster(cluster.name, function (err, result) {
-                            if (err) {
-                                log("error", err)
-                            }
+                                log("response", result)
+                            });
+                        }
+                    } else if (action == "resume") {
+                        if (canPause(project, cluster.name, nopause)) {
+                            client.resumecluster(cluster.name, function (err, result) {
+                                if (err) {
+                                    log("error", err)
+                                }
 
-                            log("response", result)
-                        });
+                                log("response", result)
+                            });
+                        }
+                    } else {
+                        throw "invalid action"
                     }
-                } else {
-                    throw "invalid action"
+
                 }
+            })
+        }
 
-            }
-        })
     })
 }
 
