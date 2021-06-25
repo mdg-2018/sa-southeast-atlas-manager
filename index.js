@@ -45,23 +45,25 @@ function togglePause(project, nopause) {
                 if (cluster.providerSettings.instanceSizeName != "M0") {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
-                            client.pausecluster(cluster.name, function (err, result) {
-                                if (err) {
-                                    log("error", err)
-                                }
+                            console.log("Pausing " + cluster.groupId + "/" + cluster.name)
+                            // client.pausecluster(cluster.name, function (err, result) {
+                            //     if (err) {
+                            //         log("error", err)
+                            //     }
 
-                                log("response", result)
-                            });
+                            //     log("response", result)
+                            // });
                         }
+                        
                     } else if (action == "resume") {
                         if (canPause(project, cluster.name, nopause)) {
-                            client.resumecluster(cluster.name, function (err, result) {
-                                if (err) {
-                                    log("error", err)
-                                }
+                            // client.resumecluster(cluster.name, function (err, result) {
+                            //     if (err) {
+                            //         log("error", err)
+                            //     }
 
-                                log("response", result)
-                            });
+                            //     log("response", result)
+                            // });
                         }
                     } else {
                         throw "invalid action"
@@ -75,7 +77,6 @@ function togglePause(project, nopause) {
 }
 
 function log(type, message) {
-    var date = new Date();
     var response = {
         "type": type,
         "time": new Date(),
