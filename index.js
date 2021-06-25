@@ -12,7 +12,6 @@ if (args._[0] == "pause" || args._[0] == "resume") {
     action = args._[0]
 } else {
     throw "invalid argument"
-    process.exit();
 }
 
 var orgClient = new AtlasApiClient('', key.key, key.username);
@@ -46,24 +45,24 @@ function togglePause(project, nopause) {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
                             console.log("Pausing " + cluster.groupId + "/" + cluster.name)
-                            // client.pausecluster(cluster.name, function (err, result) {
-                            //     if (err) {
-                            //         log("error", err)
-                            //     }
+                            client.pausecluster(cluster.name, function (err, result) {
+                                if (err) {
+                                    log("error", err)
+                                }
 
-                            //     log("response", result)
-                            // });
+                                log("response", result)
+                            });
                         }
                         
                     } else if (action == "resume") {
                         if (canPause(project, cluster.name, nopause)) {
-                            // client.resumecluster(cluster.name, function (err, result) {
-                            //     if (err) {
-                            //         log("error", err)
-                            //     }
+                            client.resumecluster(cluster.name, function (err, result) {
+                                if (err) {
+                                    log("error", err)
+                                }
 
-                            //     log("response", result)
-                            // });
+                                log("response", result)
+                            });
                         }
                     } else {
                         throw "invalid action"
@@ -111,13 +110,13 @@ function canPause(project, cluster, nopause) {
     var canPause = true;
     if (cluster.indexOf('nopause') > -1) {
         canPause = false;
-        log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: nopause`);
+        log("info", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: nopause`);
     }
 
     nopause.forEach((item) => {
         if (item.projectName == project.name && item.clusterName == cluster) {
             canPause = false;
-            log("cluster not paused", `Not pausing ${item.projectName}/${item.clusterName} because it is whitelisted`);
+            log("info", `Not pausing ${item.projectName}/${item.clusterName} because it is whitelisted`);
         }
     })
 
