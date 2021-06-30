@@ -2,7 +2,6 @@ const AtlasApiClient = require('atlasmanager').AtlasApiClient;
 const AtlasRequest = require('atlasmanager').AtlasRequest;
 const parseArgs = require('minimist');
 const request = require('request');
-const MongoClient = require('mongodb').MongoClient;
 const key = require('./key.json');
 const config = require("./config.json");
 
@@ -14,15 +13,29 @@ if (args._[0] == "pause" || args._[0] == "resume") {
     throw "invalid argument"
 }
 
+log("info","Running manager app.")
+
 var orgClient = new AtlasApiClient('', key.key, key.username);
 AtlasRequest.doGet('', orgClient.auth, function (err, response) {
     var projects = JSON.parse(response.body);
+    if(config.test.isTest){
+        projects = {
+            "results": config.test.testProjects
+        }
+    }
+
+    if(config.test.isTest){
+        console.log(projects)
+    }
+    
+    log("info","Examining projects " + JSON.stringify(projects.results))
 
     //Don't pause clusters people don't want paused
     var stitchUrl = config.stitchWebhook + key.stitchSecret;
     request.get(stitchUrl, function (error, response, body) {
         var nopause = JSON.parse(body);
-        log("checking whitelist", nopause);
+        
+        log("info","checking whitelist", nopause);
 
         projects.results.forEach((project) => {
             togglePause(project, nopause);
@@ -37,33 +50,23 @@ function togglePause(project, nopause) {
     var client = new AtlasApiClient(project.id, key.key, key.username);
     client.clusterinfo(null, function (err, clusters) {
         if (err) {
-            log("error", err);
+            log("error", "problem getting cluster information", err);
         }
         if (clusters) {
             clusters.results.forEach((cluster) => {
                 if (cluster.providerSettings.instanceSizeName != "M0") {
                     if (action == "pause") {
                         if (canPause(project, cluster.name, nopause)) {
-                            console.log("Pausing " + cluster.groupId + "/" + cluster.name)
+                            log("info","Pausing " + cluster.groupId + "/" + cluster.name)
                             client.pausecluster(cluster.name, function (err, result) {
                                 if (err) {
-                                    log("error", err)
+                                    log("error", "an error occured while pausing cluster " + cluster.name, err)
                                 }
 
-                                log("response", result)
+                                log("response", "response from pausing " + cluster.name, result)
                             });
                         }
                         
-                    } else if (action == "resume") {
-                        if (canPause(project, cluster.name, nopause)) {
-                            client.resumecluster(cluster.name, function (err, result) {
-                                if (err) {
-                                    log("error", err)
-                                }
-
-                                log("response", result)
-                            });
-                        }
                     } else {
                         throw "invalid action"
                     }
@@ -75,42 +78,22 @@ function togglePause(project, nopause) {
     })
 }
 
-function log(type, message) {
+async function log(type, message,data) {
     var response = {
         "type": type,
         "time": new Date(),
-        "message": message
+        "message": message,
+        "data":data
     }
 
-    if (config.logLocation == "mongodb") {
-        try {
-            var mongoClient = new MongoClient(config.mongoURI);
-            mongoClient.connect(function (err) {
-                if (err) {
-                    console.log(err);
-                }
-                mongoClient.db(config.logDB).collection(config.logCollection).insertOne(response, function (err, result) {
-                    if (err) {
-                        console.log(err);
-                    }
-                    mongoClient.close();
-                });
-            })
-        } catch (err) {
-            console.log(err);
-        }
-
-    } else {
-        console.log(JSON.stringify(response));
-    }
-
+    console.log(response);
 }
 
 function canPause(project, cluster, nopause) {
     var canPause = true;
     if (cluster.indexOf('nopause') > -1) {
         canPause = false;
-        log("info", `Not pausing ${item.projectName}/${item.clusterName} because the name contains phrase: nopause`);
+        log("info", `Not pausing ${project.name}/${cluster} because the name contains phrase: nopause`);
     }
 
     nopause.forEach((item) => {

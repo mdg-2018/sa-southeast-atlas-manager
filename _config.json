@@ -1,7 +1,7 @@
 {
-    "logLocation":"",
-    "mongoURI":"",
-    "logDB":"",
-    "logCollection":"",
-    "stitchWebhook":""
+    "stitchWebhook":"",
+    "test":{
+        "isTest":false,
+        "testProjectIds":[]
+    }
 }
