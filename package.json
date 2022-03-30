@@ -11,7 +11,7 @@
   "dependencies": {
     "atlasmanager": "github:mdg-2018/libAtlasManager",
     "bson": "^4.4.0",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.6",
     "mongodb": "^3.3.0-beta2"
   }
 }
